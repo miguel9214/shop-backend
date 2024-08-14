@@ -2,6 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\AdminController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +18,24 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+// Grupo de rutas de autenticación
+Route::prefix('auth')->group(function () {
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('refresh', [AuthController::class, 'refresh'])->middleware('auth:api');
+});
+
+// Rutas protegidas por autenticación JWT
+Route::middleware('auth:api')->group(function () {
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('me', [AuthController::class, 'me']);
+
+    // Rutas protegidas por roles
+    Route::middleware('role:admin')->group(function () {
+        Route::get('admin', [AdminController::class, 'index']);
+    });
+
+    // Rutas protegidas por permisos
+    Route::middleware('permission:manage products')->group(function () {
+        Route::resource('products', ProductController::class);
+    });
 });
